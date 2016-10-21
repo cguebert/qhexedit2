@@ -20,6 +20,9 @@ QHexEdit::QHexEdit(QWidget *parent) : QAbstractScrollArea(parent)
     _overwriteMode = true;
     _highlighting = true;
     _readOnly = false;
+    _selectWithMouse = true;
+    _selectWithKeyboard = true;
+    _moveWithKeyboard = true;
     _cursorPosition = 0;
     _lastEventSize = 0;
 
@@ -251,6 +254,36 @@ void QHexEdit::setReadOnly(bool readOnly)
     _readOnly = readOnly;
 }
 
+bool QHexEdit::selectWithMouse()
+{
+    return _selectWithMouse;
+}
+
+void QHexEdit::setSelectWithMouse(bool enable)
+{
+    _selectWithMouse = enable;
+}
+
+bool QHexEdit::selectWithKeyboard()
+{
+    return _selectWithKeyboard;
+}
+
+void QHexEdit::setSelectWithKeyboard(bool enable)
+{
+    _selectWithKeyboard = enable;
+}
+
+bool QHexEdit::moveWithKeyboard()
+{
+    return _moveWithKeyboard;
+}
+
+void QHexEdit::setMoveWithKeyboard(bool enable)
+{
+    _moveWithKeyboard = enable;
+}
+
 // ********************************************************************** Access to data of qhexedit
 bool QHexEdit::setData(QIODevice &iODevice)
 {
@@ -388,126 +421,138 @@ void QHexEdit::undo()
     refresh();
 }
 
+void QHexEdit::setSelection(qint64 start, qint64 end)
+{
+    resetSelection(start);
+    setSelection(end);
+}
+
 // ********************************************************************** Handle events
 void QHexEdit::keyPressEvent(QKeyEvent *event)
 {
     // Cursor movements
-    if (event->matches(QKeySequence::MoveToNextChar))
+    if (_moveWithKeyboard)
     {
-        setCursorPosition(_cursorPosition + 1);
-        resetSelection(_cursorPosition);
-    }
-    if (event->matches(QKeySequence::MoveToPreviousChar))
-    {
-        setCursorPosition(_cursorPosition - 1);
-        resetSelection(_cursorPosition);
-    }
-    if (event->matches(QKeySequence::MoveToEndOfLine))
-    {
-        setCursorPosition(_cursorPosition | (2 * BYTES_PER_LINE -1));
-        resetSelection(_cursorPosition);
-    }
-    if (event->matches(QKeySequence::MoveToStartOfLine))
-    {
-        setCursorPosition(_cursorPosition - (_cursorPosition % (2 * BYTES_PER_LINE)));
-        resetSelection(_cursorPosition);
-    }
-    if (event->matches(QKeySequence::MoveToPreviousLine))
-    {
-        setCursorPosition(_cursorPosition - (2 * BYTES_PER_LINE));
-        resetSelection(_cursorPosition);
-    }
-    if (event->matches(QKeySequence::MoveToNextLine))
-    {
-        setCursorPosition(_cursorPosition + (2 * BYTES_PER_LINE));
-        resetSelection(_cursorPosition);
-    }
-    if (event->matches(QKeySequence::MoveToNextPage))
-    {
-        setCursorPosition(_cursorPosition + (((_rowsShown - 1) * 2 * BYTES_PER_LINE)));
-        resetSelection(_cursorPosition);
-    }
-    if (event->matches(QKeySequence::MoveToPreviousPage))
-    {
-        setCursorPosition(_cursorPosition - (((_rowsShown - 1) * 2 * BYTES_PER_LINE)));
-        resetSelection(_cursorPosition);
-    }
-    if (event->matches(QKeySequence::MoveToEndOfDocument))
-    {
-        setCursorPosition(_chunks->size() * 2);
-        resetSelection(_cursorPosition);
-    }
-    if (event->matches(QKeySequence::MoveToStartOfDocument))
-    {
-        setCursorPosition(0);
-        resetSelection(_cursorPosition);
+        if (event->matches(QKeySequence::MoveToNextChar))
+        {
+            setCursorPosition(_cursorPosition + 1);
+            resetSelection(_cursorPosition);
+        }
+        if (event->matches(QKeySequence::MoveToPreviousChar))
+        {
+            setCursorPosition(_cursorPosition - 1);
+            resetSelection(_cursorPosition);
+        }
+        if (event->matches(QKeySequence::MoveToEndOfLine))
+        {
+            setCursorPosition(_cursorPosition | (2 * BYTES_PER_LINE - 1));
+            resetSelection(_cursorPosition);
+        }
+        if (event->matches(QKeySequence::MoveToStartOfLine))
+        {
+            setCursorPosition(_cursorPosition - (_cursorPosition % (2 * BYTES_PER_LINE)));
+            resetSelection(_cursorPosition);
+        }
+        if (event->matches(QKeySequence::MoveToPreviousLine))
+        {
+            setCursorPosition(_cursorPosition - (2 * BYTES_PER_LINE));
+            resetSelection(_cursorPosition);
+        }
+        if (event->matches(QKeySequence::MoveToNextLine))
+        {
+            setCursorPosition(_cursorPosition + (2 * BYTES_PER_LINE));
+            resetSelection(_cursorPosition);
+        }
+        if (event->matches(QKeySequence::MoveToNextPage))
+        {
+            setCursorPosition(_cursorPosition + (((_rowsShown - 1) * 2 * BYTES_PER_LINE)));
+            resetSelection(_cursorPosition);
+        }
+        if (event->matches(QKeySequence::MoveToPreviousPage))
+        {
+            setCursorPosition(_cursorPosition - (((_rowsShown - 1) * 2 * BYTES_PER_LINE)));
+            resetSelection(_cursorPosition);
+        }
+        if (event->matches(QKeySequence::MoveToEndOfDocument))
+        {
+            setCursorPosition(_chunks->size() * 2);
+            resetSelection(_cursorPosition);
+        }
+        if (event->matches(QKeySequence::MoveToStartOfDocument))
+        {
+            setCursorPosition(0);
+            resetSelection(_cursorPosition);
+        }
     }
 
     // Select commands
-    if (event->matches(QKeySequence::SelectAll))
+    if (_selectWithKeyboard)
     {
-        resetSelection(0);
-        setSelection(2*_chunks->size() + 1);
-    }
-    if (event->matches(QKeySequence::SelectNextChar))
-    {
-        qint64 pos = _cursorPosition + 1;
-        setCursorPosition(pos);
-        setSelection(pos);
-    }
-    if (event->matches(QKeySequence::SelectPreviousChar))
-    {
-        qint64 pos = _cursorPosition - 1;
-        setSelection(pos);
-        setCursorPosition(pos);
-    }
-    if (event->matches(QKeySequence::SelectEndOfLine))
-    {
-        qint64 pos = _cursorPosition - (_cursorPosition % (2 * BYTES_PER_LINE)) + (2 * BYTES_PER_LINE);
-        setCursorPosition(pos);
-        setSelection(pos);
-    }
-    if (event->matches(QKeySequence::SelectStartOfLine))
-    {
-        qint64 pos = _cursorPosition - (_cursorPosition % (2 * BYTES_PER_LINE));
-        setCursorPosition(pos);
-        setSelection(pos);
-    }
-    if (event->matches(QKeySequence::SelectPreviousLine))
-    {
-        qint64 pos = _cursorPosition - (2 * BYTES_PER_LINE);
-        setCursorPosition(pos);
-        setSelection(pos);
-    }
-    if (event->matches(QKeySequence::SelectNextLine))
-    {
-        qint64 pos = _cursorPosition + (2 * BYTES_PER_LINE);
-        setCursorPosition(pos);
-        setSelection(pos);
-    }
-    if (event->matches(QKeySequence::SelectNextPage))
-    {
-        qint64 pos = _cursorPosition + (((viewport()->height() / _pxCharHeight) - 1) * 2 * BYTES_PER_LINE);
-        setCursorPosition(pos);
-        setSelection(pos);
-    }
-    if (event->matches(QKeySequence::SelectPreviousPage))
-    {
-        qint64 pos = _cursorPosition - (((viewport()->height() / _pxCharHeight) - 1) * 2 * BYTES_PER_LINE);
-        setCursorPosition(pos);
-        setSelection(pos);
-    }
-    if (event->matches(QKeySequence::SelectEndOfDocument))
-    {
-        qint64 pos = _chunks->size() * 2;
-        setCursorPosition(pos);
-        setSelection(pos);
-    }
-    if (event->matches(QKeySequence::SelectStartOfDocument))
-    {
-        qint64 pos = 0;
-        setCursorPosition(pos);
-        setSelection(pos);
+        if (event->matches(QKeySequence::SelectAll))
+        {
+            resetSelection(0);
+            setSelection(2 * _chunks->size() + 1);
+        }
+        if (event->matches(QKeySequence::SelectNextChar))
+        {
+            qint64 pos = _cursorPosition + 1;
+            setCursorPosition(pos);
+            setSelection(pos);
+        }
+        if (event->matches(QKeySequence::SelectPreviousChar))
+        {
+            qint64 pos = _cursorPosition - 1;
+            setSelection(pos);
+            setCursorPosition(pos);
+        }
+        if (event->matches(QKeySequence::SelectEndOfLine))
+        {
+            qint64 pos = _cursorPosition - (_cursorPosition % (2 * BYTES_PER_LINE)) + (2 * BYTES_PER_LINE);
+            setCursorPosition(pos);
+            setSelection(pos);
+        }
+        if (event->matches(QKeySequence::SelectStartOfLine))
+        {
+            qint64 pos = _cursorPosition - (_cursorPosition % (2 * BYTES_PER_LINE));
+            setCursorPosition(pos);
+            setSelection(pos);
+        }
+        if (event->matches(QKeySequence::SelectPreviousLine))
+        {
+            qint64 pos = _cursorPosition - (2 * BYTES_PER_LINE);
+            setCursorPosition(pos);
+            setSelection(pos);
+        }
+        if (event->matches(QKeySequence::SelectNextLine))
+        {
+            qint64 pos = _cursorPosition + (2 * BYTES_PER_LINE);
+            setCursorPosition(pos);
+            setSelection(pos);
+        }
+        if (event->matches(QKeySequence::SelectNextPage))
+        {
+            qint64 pos = _cursorPosition + (((viewport()->height() / _pxCharHeight) - 1) * 2 * BYTES_PER_LINE);
+            setCursorPosition(pos);
+            setSelection(pos);
+        }
+        if (event->matches(QKeySequence::SelectPreviousPage))
+        {
+            qint64 pos = _cursorPosition - (((viewport()->height() / _pxCharHeight) - 1) * 2 * BYTES_PER_LINE);
+            setCursorPosition(pos);
+            setSelection(pos);
+        }
+        if (event->matches(QKeySequence::SelectEndOfDocument))
+        {
+            qint64 pos = _chunks->size() * 2;
+            setCursorPosition(pos);
+            setSelection(pos);
+        }
+        if (event->matches(QKeySequence::SelectStartOfDocument))
+        {
+            qint64 pos = 0;
+            setCursorPosition(pos);
+            setSelection(pos);
+        }
     }
 
     // Edit Commands
@@ -674,7 +719,7 @@ void QHexEdit::keyPressEvent(QKeyEvent *event)
     /* Copy */
     if (event->matches(QKeySequence::Copy))
     {
-        QByteArray ba = _chunks->data(getSelectionBegin(), getSelectionEnd() - getSelectionBegin()).toHex();
+        QByteArray ba = _chunks->data(getSelectionBegin(), getSelectionEnd() - getSelectionBegin()).toHex().toUpper();
         for (qint64 idx = 32; idx < ba.size(); idx +=33)
             ba.insert(idx, "\n");
         QClipboard *clipboard = QApplication::clipboard();
@@ -682,7 +727,7 @@ void QHexEdit::keyPressEvent(QKeyEvent *event)
     }
 
     // Switch between insert/overwrite mode
-    if ((event->key() == Qt::Key_Insert) && (event->modifiers() == Qt::NoModifier))
+    if (!_readOnly && (event->key() == Qt::Key_Insert) && (event->modifiers() == Qt::NoModifier))
     {
         setOverwriteMode(!overwriteMode());
         setCursorPosition(_cursorPosition);
@@ -693,6 +738,9 @@ void QHexEdit::keyPressEvent(QKeyEvent *event)
 
 void QHexEdit::mouseMoveEvent(QMouseEvent * event)
 {
+    if (!_selectWithMouse)
+        return;
+
     _blink = false;
     viewport()->update();
     qint64 actPos = cursorPosition(event->pos());
@@ -810,10 +858,13 @@ void QHexEdit::paintEvent(QPaintEvent *event)
     }
 
     // paint cursor
-    if (_blink && !_readOnly && hasFocus())
-        painter.fillRect(_cursorRect, this->palette().color(QPalette::WindowText));
-    else
-        painter.drawText(_pxCursorX, _pxCursorY, _hexDataShown.mid(_cursorPosition - _bPosFirst * 2, 1).toUpper());
+    if (!_readOnly)
+    {
+        if (_blink && hasFocus())
+            painter.fillRect(_cursorRect, this->palette().color(QPalette::WindowText));
+        else
+            painter.drawText(_pxCursorX, _pxCursorY, _hexDataShown.mid(_cursorPosition - _bPosFirst * 2, 1).toUpper());
+    }
 
     // emit event, if size has changed
     if (_lastEventSize != _chunks->size())
@@ -971,6 +1022,7 @@ QString QHexEdit::toReadable(const QByteArray &ba)
 void QHexEdit::updateCursor()
 {
     _blink = !_blink;
-    viewport()->update(_cursorRect);
+    if(!_readOnly)
+        viewport()->update(_cursorRect);
 }
 

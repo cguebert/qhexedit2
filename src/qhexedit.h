@@ -120,6 +120,18 @@ class QHexEdit : public QAbstractScrollArea
     */
     Q_PROPERTY(bool readOnly READ isReadOnly WRITE setReadOnly)
 
+    /*! Enable or disable being able to select with the mouse 
+    */
+    Q_PROPERTY(bool mouseSelection READ selectWithMouse WRITE setSelectWithMouse)
+
+    /*! Enable or disable being able to select with the keyboard 
+    */
+    Q_PROPERTY(bool keyboardSelection READ selectWithKeyboard WRITE setSelectWithKeyboard)
+
+    /*! Enable or disable being able to move with the keyboard 
+    */
+    Q_PROPERTY(bool keyboardMovement READ moveWithKeyboard WRITE setMoveWithKeyboard)
+
     /*! Set the font of the widget. Please use fixed width fonts like Mono or Courier.*/
     Q_PROPERTY(QFont font READ font WRITE setFont)
 
@@ -232,6 +244,10 @@ public:
     */
     QString toReadableString();
 
+    /*! Change the selection
+    */
+    void setSelection(qint64 start, qint64 end);
+
 
 public slots:
     /*! Redoes the last operation. If there is no operation to redo, i.e.
@@ -300,6 +316,15 @@ public:
     QColor selectionColor();
     void setSelectionColor(const QColor &color);
 
+    bool selectWithMouse();
+    void setSelectWithMouse(bool enable);
+
+    bool selectWithKeyboard();
+    void setSelectWithKeyboard(bool enable);
+
+    bool moveWithKeyboard();
+    void setMoveWithKeyboard(bool enable);
+
 protected:
     // Handle events
     void keyPressEvent(QKeyEvent *event);
@@ -362,6 +387,9 @@ private:
     QBrush _brushHighlighted;
     QPen _penHighlighted;
     bool _readOnly;
+    bool _selectWithMouse;
+    bool _selectWithKeyboard;
+    bool _moveWithKeyboard;
 
     // other variables
     int _addrDigits;                            // real no of addressdigits, may be > addressWidth
