@@ -17,7 +17,7 @@ target_include_directories(${target}
 	INTERFACE
 	$<INSTALL_INTERFACE:include>)
 
-set(cmake_dir ${target})
+set(cmake_dir lib/cmake/${target})
 set(project_config ${PROJECT_BINARY_DIR}/${target}-config.cmake)
 set(targets_export_name ${target}-targets)
 
