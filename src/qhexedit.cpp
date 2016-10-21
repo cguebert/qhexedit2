@@ -972,7 +972,7 @@ void QHexEdit::adjust()
     if (_bPosLast >= _chunks->size())
         _bPosLast = _chunks->size() - 1;
     readBuffers();
-    setCursorPosition(_cursorPosition);
+//    setCursorPosition(_cursorPosition);
 }
 
 void QHexEdit::dataChangedPrivate(int)
