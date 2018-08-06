@@ -1,0 +1,16 @@
+build-windows:
+  stage: build
+  tags:
+    - windows
+  cache:
+    key: "%CI_COMMIT_REF_NAME%"
+    untracked: true
+    paths:
+    - build/
+  before_script:
+    - if not exist build mkdir build
+    - cd build
+    - cmake ../src -G "Visual Studio 15 2017 Win64" -DCMAKE_INSTALL_PREFIX="E:/dev/install_qhexedit2" -DCMAKE_DEBUG_POSTFIX=_d -DCMAKE_PREFIX_PATH="E:/Qt/5.10.1/msvc2015_64"
+  script:
+    - cmake --build . --config Release --target INSTALL
+    - cmake --build . --config Debug --target INSTALL
